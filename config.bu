@@ -1,0 +1,38 @@
+variant: fcos
+version: 1.2.0
+systemd:
+  units:
+  - name: container-haproxy.service
+    enabled: true
+    contents: |
+      [Unit]
+      Description=Haproxy Load Balancer
+      After=network-online.target
+      Wants=network-online.target
+      [Service]
+      ExecStartPre=-/bin/podman kill balancer
+      ExecStartPre=-/bin/podman rm balancer
+      ExecStartPre=/bin/podman pull docker.io/library/haproxy:latest
+      ExecStart=/bin/podman run --name balancer -p 443:443 -p 80:80 -v /etc/haproxy:/usr/local/etc/haproxy:ro --sysctl net.ipv4.ip_unprivileged_port_start=0 haproxy
+      [Install]
+      WantedBy=multi-user.target
+storage:
+  directories:
+  - path: /etc/haproxy
+  - path: /etc/haproxy/certs
+  files:
+  - path: /etc/haproxy/certs/certificate.crt
+    mode: 0444
+    contents:
+      local: certificate.crt
+
+  - path: /etc/haproxy/certs/certificate.crt.key
+    mode: 0444
+    contents:
+      local: certificate.crt.key
+
+  - path: /etc/haproxy/haproxy.cfg
+    mode: 0444
+    contents:
+      local: haproxy.cfg
+
